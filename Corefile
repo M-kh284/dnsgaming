@@ -1,0 +1,52 @@
+# Smart DNS profile for gaming consoles
+# General traffic: encrypted upstream via DNS-over-TLS to Cloudflare
+. {
+    errors
+    log
+    health
+    ready
+    cache 300 {
+      success 4096
+      denial 2048
+      prefetch 10 30s
+    }
+    loadbalance round_robin
+    forward . tls://1.1.1.1 tls://1.0.0.1 {
+      tls_servername cloudflare-dns.com
+      max_concurrent 1000
+      health_check 5s
+    }
+    prometheus :9153
+}
+
+# Gaming-related zones can use additional public resolvers as fallback
+# to reduce probability of regional poisoning/intermittent answers.
+playstation.net {
+    errors
+    cache 60
+    forward . 8.8.8.8 1.1.1.1 9.9.9.9
+}
+
+xboxlive.com {
+    errors
+    cache 60
+    forward . 8.8.8.8 1.1.1.1 9.9.9.9
+}
+
+nintendo.net {
+    errors
+    cache 60
+    forward . 8.8.8.8 1.1.1.1 9.9.9.9
+}
+
+epicgames.com {
+    errors
+    cache 60
+    forward . 8.8.8.8 1.1.1.1 9.9.9.9
+}
+
+steampowered.com {
+    errors
+    cache 60
+    forward . 8.8.8.8 1.1.1.1 9.9.9.9
+}
