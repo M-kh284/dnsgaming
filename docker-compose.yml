@@ -1,0 +1,67 @@
+name: dnsgaming
+
+services:
+  # =========================
+  # MAIN DNS SERVER PROFILE
+  # =========================
+  wg-main:
+    image: lscr.io/linuxserver/wireguard:latest
+    container_name: wg-main
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - TZ=UTC
+    volumes:
+      - ./wireguard/main:/config
+      - /lib/modules:/lib/modules:ro
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
+    profiles: ["main"]
+
+  smartdns-main:
+    image: coredns/coredns:1.11.1
+    container_name: smartdns-main
+    command: -conf /etc/coredns/Corefile
+    network_mode: "service:wg-main"
+    depends_on:
+      - wg-main
+    volumes:
+      - ./Corefile.main:/etc/coredns/Corefile:ro
+    restart: unless-stopped
+    profiles: ["main"]
+
+  # =========================
+  # RELAY/TUNNEL SERVER PROFILE
+  # =========================
+  wg-relay:
+    image: lscr.io/linuxserver/wireguard:latest
+    container_name: wg-relay
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - TZ=UTC
+    volumes:
+      - ./wireguard/relay:/config
+      - /lib/modules:/lib/modules:ro
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
+    profiles: ["relay"]
+
+  smartdns-relay:
+    image: coredns/coredns:1.11.1
+    container_name: smartdns-relay
+    command: -conf /etc/coredns/Corefile
+    depends_on:
+      - wg-relay
+    ports:
+      - "53:53/udp"
+      - "53:53/tcp"
+      - "9153:9153/tcp"
+    volumes:
+      - ./Corefile.relay:/etc/coredns/Corefile:ro
+    restart: unless-stopped
+    profiles: ["relay"]
