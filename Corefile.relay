@@ -1,0 +1,25 @@
+# Relay DNS server (public-facing)
+# It forwards all client queries through the WireGuard tunnel to main server.
+. {
+    errors
+    log
+    health
+    ready
+    cache 120
+    loadbalance round_robin
+
+    # Main DNS over WireGuard tunnel (example: 10.20.20.1)
+    forward . 10.20.20.1 {
+      max_concurrent 1000
+      health_check 5s
+    }
+
+    # Optional safety fallback if tunnel is temporarily down.
+    # Remove this block if you want strict "tunnel-only" behavior.
+    forward . 1.1.1.1 8.8.8.8 {
+      policy sequential
+      max_fails 1
+    }
+
+    prometheus :9153
+}
